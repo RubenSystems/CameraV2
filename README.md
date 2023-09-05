@@ -1,2 +1,3 @@
-# lightweight-camera
-A lightweight way of interfaceing with a camera
+
+# CameraV2
+Second Generation Security Cameras
