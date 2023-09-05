@@ -21,7 +21,7 @@ namespace rscamera {
 
 enum StreamType { NORMAL, LORES };
 
-enum GetLatestFrameResultIndicator { GET_LATEST_FRAME_SUCCESS, GET_LATEST_FRAME_FAIL };
+enum GetLatestFrameResultIndicator { GET_LATEST_FRAME_SUCCESS = 1, GET_LATEST_FRAME_FAIL = 0 };
 
 struct GetLatestFrameRes {
 	GetLatestFrameResultIndicator indicator;
