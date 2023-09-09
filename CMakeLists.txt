@@ -25,6 +25,7 @@ add_library(rscamera STATIC
 target_link_libraries(rscamera libcamera)
 target_link_libraries(rscamera libcamera_base)
 
+target_compile_options(rscamera PRIVATE -O3)
 
 # include(GNUInstallDirs)
 # install(TARGETS rscamera

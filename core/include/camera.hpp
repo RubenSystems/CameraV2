@@ -12,6 +12,7 @@
 #include <libcamera/controls.h>
 #include <libcamera/formats.h>
 #include <libcamera/framebuffer_allocator.h>
+#include <libcamera/framebuffer_allocator.h>
 #include <libcamera/stream.h>
 #include <string.h>
 
@@ -44,6 +45,8 @@ class Camera {
 
 	void next_frame( std::unique_ptr<CompletedRequest> req );
 
+	uint32_t get_stride();
+
 	GetLatestFrameRes get_latest_frame( uint8_t * buffer, size_t max_copy_size );
 
     private:
@@ -74,5 +77,6 @@ class Camera {
 	std::unordered_map<libcamera::FrameBuffer *, std::vector<libcamera::Span<uint8_t> > >
 		mapped_buffers_;
 	std::unique_ptr<pipeline_t> pipe_;
+	uint32_t stride_;
 };
 }

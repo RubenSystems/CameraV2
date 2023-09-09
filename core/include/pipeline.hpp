@@ -1,23 +1,33 @@
 #pragma once
 
-#include <condition_variable>
+
 #include <queue>
-#include <mutex>
+// #include <mutex>
 
 namespace rscamera {
 template <typename T> class Pipeline {
     private:
 	std::queue<T> queue_;
-	std::mutex mutex_;
+	// std::mutex mutex_;
 
     public:
 	void push( T && value ) {
-		std::unique_lock<std::mutex> lock( mutex_ );
+		// std::unique_lock<std::mutex> lock( mutex_ );
 		queue_.push( std::move( value ) );
 	}
 
+	bool empty() {
+		// std::unique_lock<std::mutex> lock( mutex_ );
+		return queue_.size() <= 0;
+	}
+
+	size_t count() {
+		// std::unique_lock<std::mutex> lock( mutex_ );
+		return queue_.size();
+	}
+
 	bool pop( T & value ) {
-		std::unique_lock<std::mutex> lock( mutex_ );
+		// std::unique_lock<std::mutex> lock( mutex_ );
 
 		if ( queue_.empty() )
 			return false;

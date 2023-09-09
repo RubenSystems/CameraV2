@@ -12,7 +12,8 @@ extern "C" {
 
 
     pub fn camera_init() -> *mut std::ffi::c_void;
-    pub fn camera_setup(camera: *mut std::ffi::c_void, height: u64, width: u64, fps: u64);
+    pub fn camera_setup(camera: *mut std::ffi::c_void, width: u64, height: u64, fps: u64);
+    pub fn camera_get_stride(camera: *mut std::ffi::c_void) -> u32;
     pub fn camera_get_frame(
         camera: *mut std::ffi::c_void,
         buffer: *mut u8,

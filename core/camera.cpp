@@ -51,10 +51,16 @@ GetLatestFrameRes rscamera::Camera::get_latest_frame( uint8_t * buffer, size_t m
 	libcamera::Span frame_buffer = mapped_buffers_.find(raw_buffer)->second[0];
 	size_t max_size_to_copy = std::min( max_copy_size, frame_buffer.size() );
 	memmove(buffer, frame_buffer.data(), max_size_to_copy * sizeof(uint8_t));
-	next_frame( std::move( req ) );
+	if (pipe_->count() <= 2)
+		next_frame( std::move( req ) );
+
 	ret.indicator = GET_LATEST_FRAME_SUCCESS;
 	ret.size = max_size_to_copy;
 	return ret;
+}
+
+uint32_t rscamera::Camera::get_stride() {
+	return stride_;
 }
 
 void rscamera::Camera::alloc() {
@@ -71,19 +77,21 @@ void rscamera::Camera::setup_camera() {
 void rscamera::Camera::setup_streams( uint32_t width, uint32_t height ) {
 	config_ = camera_->generateConfiguration( { libcamera::StreamRole::VideoRecording } );
 
-	auto video_stream_config = &(config_->at( 0 ));
+	libcamera::StreamConfiguration * video_stream_config = &(config_->at( 0 ));
 
 	video_stream_config->size.width = width;
 	video_stream_config->size.height = height;
 	video_stream_config->bufferCount = 6;
-	video_stream_config->pixelFormat = libcamera::formats::YUV420;
+	video_stream_config->pixelFormat = libcamera::formats::BGR888;
 	video_stream_config->colorSpace = libcamera::ColorSpace::Sycc;
-
 	config_->validate();
 	camera_->configure( config_.get() );
 
 	streams_[StreamType::NORMAL] = video_stream_config->stream() ;
+	stride_ = streams_[StreamType::NORMAL]->configuration().stride;
+
 }
+
 
 void rscamera::Camera::setup_controls() {
 	controls_.set( controls::AwbMode, controls::AwbAuto );
