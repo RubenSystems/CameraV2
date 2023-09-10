@@ -44,16 +44,13 @@ GetLatestFrameRes rscamera::Camera::get_latest_frame( uint8_t * buffer, size_t m
 	GetLatestFrameRes ret;
 	if ( !pipe_->pop( req ) ) {
 		ret.indicator = GET_LATEST_FRAME_FAIL;
-		ret.size = 0;
 		return ret;
 	}
 	libcamera::FrameBuffer * raw_buffer = req->buffers.find( streams_[NORMAL] )->second;
-	libcamera::Span frame_buffer = mapped_buffers_.find(raw_buffer)->second[0];
+	libcamera::Span<uint8_t> & frame_buffer = mapped_buffers_.find(raw_buffer)->second[0];
 	size_t max_size_to_copy = std::min( max_copy_size, frame_buffer.size() );
-	memmove(buffer, frame_buffer.data(), max_size_to_copy * sizeof(uint8_t));
-	if (pipe_->count() <= 2)
-		next_frame( std::move( req ) );
-
+	memmove(buffer, frame_buffer.data(), max_size_to_copy);
+	next_frame( std::move( req ) );
 	ret.indicator = GET_LATEST_FRAME_SUCCESS;
 	ret.size = max_size_to_copy;
 	return ret;
@@ -81,7 +78,7 @@ void rscamera::Camera::setup_streams( uint32_t width, uint32_t height ) {
 
 	video_stream_config->size.width = width;
 	video_stream_config->size.height = height;
-	video_stream_config->bufferCount = 6;
+	video_stream_config->bufferCount = 2;
 	video_stream_config->pixelFormat = libcamera::formats::BGR888;
 	video_stream_config->colorSpace = libcamera::ColorSpace::Sycc;
 	config_->validate();

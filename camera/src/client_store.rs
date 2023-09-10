@@ -46,10 +46,13 @@ impl ClientManager {
         })
     }
 
-    pub fn immutable_iterator(&mut self) -> Vec<&Client>{
-        self.clients.iter_mut().map(|(_, value)| {
-            value.ttl -= 1;
-            &value.client
-        }).collect()
+    pub fn immutable_iterator(&mut self) -> Vec<&Client> {
+        self.clients
+            .iter_mut()
+            .map(|(_, value)| {
+                value.ttl -= 1;
+                &value.client
+            })
+            .collect()
     }
 }

@@ -1,5 +1,5 @@
-use std::pin::Pin;
 use std::future::Future;
+use std::pin::Pin;
 use std::task::{Context, Poll};
 
 #[repr(C)]
@@ -9,7 +9,6 @@ pub struct CameraGetFrameResult {
 }
 
 extern "C" {
-
 
     pub fn camera_init() -> *mut std::ffi::c_void;
     pub fn camera_setup(camera: *mut std::ffi::c_void, width: u64, height: u64, fps: u64);
@@ -23,18 +22,18 @@ extern "C" {
 
 pub struct CameraCapture {
     camera: *mut std::ffi::c_void,
-    buffer: *mut u8, 
-    max_size: u64
+    buffer: *mut u8,
+    max_size: u64,
 }
 
 impl CameraCapture {
-	pub fn new(camera: *mut std::ffi::c_void, buffer: &mut Vec<u8>,  max_size: u64) -> Self {
-		CameraCapture {
-			camera, 
-			buffer: buffer.as_mut_ptr(), 
-			max_size
-		}
-	}
+    pub fn new(camera: *mut std::ffi::c_void, buffer: &mut Vec<u8>, max_size: u64) -> Self {
+        CameraCapture {
+            camera,
+            buffer: buffer.as_mut_ptr(),
+            max_size,
+        }
+    }
 }
 
 impl Future for CameraCapture {
@@ -42,7 +41,7 @@ impl Future for CameraCapture {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Implement your asynchronous logic here
-        let res = unsafe{camera_get_frame(self.camera, self.buffer, self.max_size)};
+        let res = unsafe { camera_get_frame(self.camera, self.buffer, self.max_size) };
         if res.success {
             Poll::Ready(res.size)
         } else {

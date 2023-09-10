@@ -13,21 +13,16 @@ set_property(TARGET libcamera PROPERTY IMPORTED_LOCATION "/lib/aarch64-linux-gnu
 add_library(libcamera_base SHARED IMPORTED)
 set_property(TARGET libcamera_base PROPERTY IMPORTED_LOCATION "/lib/aarch64-linux-gnu/libcamera-base.so")
 
-# add_library(libprocessing SHARED IMPORTED)
-# set_property(TARGET libprocessing PROPERTY IMPORTED_LOCATION "processing/target/release/libprocessing.so")
-
 add_library(rscamera STATIC
     core/c_bindings.cpp core/camera.cpp
 )
 
-# add_executable(rscamera core/main.cpp core/camera.cpp)
+target_compile_options(rscamera PRIVATE -O3)
+
 
 target_link_libraries(rscamera libcamera)
 target_link_libraries(rscamera libcamera_base)
 
-target_compile_options(rscamera PRIVATE -O3)
 
-# include(GNUInstallDirs)
-# install(TARGETS rscamera
-#     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-# )
+set(INSTALL_DIR "/home/RubenSystems/CameraV2/camera/lib")
+install(TARGETS rscamera DESTINATION ${INSTALL_DIR})
