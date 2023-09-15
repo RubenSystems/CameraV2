@@ -11,7 +11,7 @@ impl CameraServer {
         }
     }
 
-    pub async fn send(&self, data: &[u8], to: &Client) {
-        self.server.transmit(data, to).await;
+    pub async fn send(&self, data: &[u8], to: &Client, runtime: &tokio::runtime::Runtime) {
+        self.server.transmit_concurrently(data, to, runtime).await;
     }
 }

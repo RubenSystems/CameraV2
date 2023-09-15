@@ -17,7 +17,7 @@ pub struct ImageData {
 impl JPEGCompressor {
     pub fn new() -> Self {
         let mut compressor = turbojpeg::Compressor::new().unwrap();
-        compressor.set_quality(50);
+        compressor.set_quality(90);
         compressor.set_subsamp(turbojpeg::Subsamp::Sub4x1);
 
         JPEGCompressor { compressor }

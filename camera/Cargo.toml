@@ -10,7 +10,8 @@ build="build.rs"
 image = "0.24.7"
 libc = "0.2"
 tokio = {version = "1.32.0", features= ["full"]}
-rsct = { git = "https://github.com/rubensystems/rsct", version = "0.1.0" }
+rsct = { path = "../../rsct_working/rsct", version = "0.1.0" }
 turbojpeg = {version = "0.5.4", features = ["image"]}
 lazy_static = "1.4.0"
 rayon = "1.7.0"
+core_affinity = "0.8.1"
