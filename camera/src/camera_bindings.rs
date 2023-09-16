@@ -15,23 +15,27 @@ extern "C" {
     pub fn camera_get_stride(camera: *mut std::ffi::c_void) -> u32;
     pub fn camera_get_frame(
         camera: *mut std::ffi::c_void,
+        frame_id: u8,
         buffer: *mut u8,
-        max_size: u64,
     ) -> CameraGetFrameResult;
 }
 
 pub struct CameraCapture {
     camera: *mut std::ffi::c_void,
+    frame_id: u8,
     buffer: *mut u8,
-    max_size: u64,
 }
 
 impl CameraCapture {
-    pub fn new(camera: *mut std::ffi::c_void, buffer: &mut Vec<u8>, max_size: u64) -> Self {
+    pub fn new(
+        camera: *mut std::ffi::c_void,
+        frame_id: u8,
+        buffer: &mut Vec<u8>,
+    ) -> Self {
         CameraCapture {
             camera,
+            frame_id,
             buffer: buffer.as_mut_ptr(),
-            max_size,
         }
     }
 }
@@ -41,7 +45,8 @@ impl Future for CameraCapture {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Implement your asynchronous logic here
-        let res = unsafe { camera_get_frame(self.camera, self.buffer, self.max_size) };
+        let res =
+            unsafe { camera_get_frame(self.camera, self.frame_id, self.buffer) };
         if res.success {
             Poll::Ready(res.size)
         } else {

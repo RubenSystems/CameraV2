@@ -19,9 +19,8 @@ uint32_t camera_get_stride(void * camera) {
 	return ((rscamera::Camera *)camera)->get_stride();
 }
 
-struct camera_get_frame_res camera_get_frame( void * camera, uint8_t * buffer,
-					      uint64_t max_size ) {
-	rscamera::GetLatestFrameRes res = ((rscamera::Camera *)camera)->get_latest_frame( buffer, max_size );
+struct camera_get_frame_res camera_get_frame(void * camera, uint8_t cindex,  uint8_t * buffer) {
+	rscamera::GetLatestFrameRes res = ((rscamera::Camera *)camera)->get_latest_frame(cindex, buffer );
 
 	struct camera_get_frame_res ret = {
 		.success = res.indicator ==

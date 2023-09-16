@@ -3,6 +3,15 @@
 
 using namespace rscamera;
 
+
+struct Packet {
+	uint16_t index;
+	uint8_t cid;
+	uint16_t total; 
+};
+
+constexpr uint32_t MAX_PACKET_DATA_SIZE = 1460 - sizeof(Packet);
+
 rscamera::Camera::~Camera() {
 	camera_->stop();
 	camera_->release();
@@ -39,7 +48,8 @@ void rscamera::Camera::next_frame( std::unique_ptr<CompletedRequest> req ) {
 	camera_->queueRequest( request );
 }
 
-GetLatestFrameRes rscamera::Camera::get_latest_frame( uint8_t * buffer, size_t max_copy_size ) {
+
+GetLatestFrameRes rscamera::Camera::get_latest_frame(uint8_t packet_index, uint8_t * buffer ) {
 	std::unique_ptr<CompletedRequest> req = nullptr;
 	GetLatestFrameRes ret;
 	if ( !pipe_->pop( req ) ) {
@@ -48,11 +58,10 @@ GetLatestFrameRes rscamera::Camera::get_latest_frame( uint8_t * buffer, size_t m
 	}
 	libcamera::FrameBuffer * raw_buffer = req->buffers.find( streams_[NORMAL] )->second;
 	libcamera::Span<uint8_t> & frame_buffer = mapped_buffers_.find(raw_buffer)->second[0];
-	size_t max_size_to_copy = std::min( max_copy_size, frame_buffer.size() );
-	memmove(buffer, frame_buffer.data(), max_size_to_copy);
+	memmove(buffer, frame_buffer.data(), frame_buffer.size());
 	next_frame( std::move( req ) );
 	ret.indicator = GET_LATEST_FRAME_SUCCESS;
-	ret.size = max_size_to_copy;
+	ret.size = frame_buffer.size();
 	return ret;
 }
 
@@ -92,6 +101,7 @@ void rscamera::Camera::setup_streams( uint32_t width, uint32_t height ) {
 
 void rscamera::Camera::setup_controls() {
 	controls_.set( controls::AwbMode, controls::AwbAuto );
+	// controls_.set( controls::ExposureMode, controls::AwbAuto );
 	controls_.set( controls::AeMeteringMode, controls::MeteringMatrix );
 	controls_.set( controls::AfMode, controls::AfModeEnum::AfModeContinuous );
 }

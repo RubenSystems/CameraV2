@@ -47,7 +47,7 @@ class Camera {
 
 	uint32_t get_stride();
 
-	GetLatestFrameRes get_latest_frame( uint8_t * buffer, size_t max_copy_size );
+	GetLatestFrameRes get_latest_frame(uint8_t packet_index, uint8_t * buffer );
 
     private:
 	void alloc();
