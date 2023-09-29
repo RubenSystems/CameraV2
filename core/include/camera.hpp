@@ -22,12 +22,14 @@ namespace rscamera {
 
 enum StreamType { NORMAL, LORES };
 
-enum GetLatestFrameResultIndicator { GET_LATEST_FRAME_SUCCESS = 1, GET_LATEST_FRAME_FAIL = 0 };
-
-struct GetLatestFrameRes {
-	GetLatestFrameResultIndicator indicator;
-	size_t size;
-};
+extern "C" {
+	struct GetLatestFrameRes {
+		bool success;
+		uint8_t * data;
+		uint64_t request;
+		size_t size;
+	};
+}
 
 class Camera {
     public:
@@ -47,7 +49,7 @@ class Camera {
 
 	uint32_t get_stride();
 
-	GetLatestFrameRes get_latest_frame(uint8_t packet_index, uint8_t * buffer );
+	GetLatestFrameRes get_latest_frame();
 
     private:
 	void alloc();

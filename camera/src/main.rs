@@ -1,13 +1,16 @@
+pub mod buffer_pool;
 pub mod camera_bindings;
 pub mod client_store;
 pub mod compression;
 pub mod server;
-pub mod buffer_pool;
 
+use camera_bindings::{
+    camera_get_stride, camera_init, camera_next_frame, camera_setup, CameraCapture,
+};
 
-use camera_bindings::{camera_get_stride, camera_init, camera_setup, CameraCapture};
-
-use std::sync::{Mutex, Arc};
+use crate::buffer_pool::BufferQueue;
+use std::sync::{Arc, Mutex};
+use turbojpeg::compressed_buf_len;
 
 // const CAMERA_WIDTH: u64 = 2328;
 // const CAMERA_HEIGHT: u64 = 1748;
@@ -32,7 +35,14 @@ async fn main() {
     let camera = unsafe { camera_init() };
     unsafe { camera_setup(camera, CAMERA_WIDTH, CAMERA_HEIGHT, CAMERA_FPS) };
     let camera_server = Arc::new(server::CameraServer::new().await);
-    let mut frame_id: u8 = 0;
+    let buffer_allocator = Arc::new(Mutex::new(BufferQueue::new(
+        compressed_buf_len(
+            CAMERA_WIDTH as usize,
+            CAMERA_HEIGHT as usize,
+            turbojpeg::Subsamp::Sub2x2,
+        )
+        .unwrap(),
+    )));
 
     let image_metadata = compression::ImageData {
         width: CAMERA_WIDTH,
@@ -40,33 +50,29 @@ async fn main() {
         pitch: unsafe { camera_get_stride(camera) } as u64,
     };
 
-    let pool = Arc::new(Mutex::new(buffer_pool::BufferQueue::new((CAMERA_WIDTH * CAMERA_HEIGHT * 4) as usize)));
-
-
 
     loop {
-        let mut camera_buffer = pool.lock().unwrap().new_buffer();
-        let _ = CameraCapture::new(
-            camera,
-            frame_id,
-            &mut camera_buffer
-        )
-        .await;
-
-        frame_id = if frame_id < u8::MAX { frame_id + 1 } else { 0 };
-
-        let client = rsct::client::Client::from_string("192.168.86.67:5254".to_string());
+        let res = CameraCapture::new(camera).await;
+        let client = rsct::client::Client::from_string("192.168.86.74:5254".to_string());
 
         let server_ref = Arc::clone(&camera_server);
-        let pool_ref = Arc::clone(&pool);
+        let buffer_ref = Arc::clone(&buffer_allocator);
+        let mut buffer = buffer_ref.lock().unwrap().new_buffer();
+        
         SYNC_RUNTIME.spawn(move || {
             let mut compresser = compression::JPEGCompressor::new();
-            let compressed_data = compresser.compress(&camera_buffer, image_metadata).unwrap();
-            pool_ref.lock().unwrap().return_buffer(camera_buffer);
+
+            let compressed_data_size = compresser
+                .compress(&res.data, image_metadata, &mut buffer)
+                .unwrap();
+            
+            unsafe { camera_next_frame(camera, res.request) };
+            drop(res);
             ASYNC_RUNTIME.spawn(async move {
                 server_ref
-                    .send(&compressed_data, &client, &ASYNC_RUNTIME)
+                    .send(&buffer[..compressed_data_size], &client, &ASYNC_RUNTIME)
                     .await;
+                buffer_ref.lock().unwrap().return_buffer(buffer);
             });
         });
     }

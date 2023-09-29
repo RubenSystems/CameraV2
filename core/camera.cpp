@@ -3,15 +3,6 @@
 
 using namespace rscamera;
 
-
-struct Packet {
-	uint16_t index;
-	uint8_t cid;
-	uint16_t total; 
-};
-
-constexpr uint32_t MAX_PACKET_DATA_SIZE = 1460 - sizeof(Packet);
-
 rscamera::Camera::~Camera() {
 	camera_->stop();
 	camera_->release();
@@ -49,19 +40,21 @@ void rscamera::Camera::next_frame( std::unique_ptr<CompletedRequest> req ) {
 }
 
 
-GetLatestFrameRes rscamera::Camera::get_latest_frame(uint8_t packet_index, uint8_t * buffer ) {
+GetLatestFrameRes rscamera::Camera::get_latest_frame() {
 	std::unique_ptr<CompletedRequest> req = nullptr;
 	GetLatestFrameRes ret;
 	if ( !pipe_->pop( req ) ) {
-		ret.indicator = GET_LATEST_FRAME_FAIL;
+		ret.success = false;
 		return ret;
 	}
 	libcamera::FrameBuffer * raw_buffer = req->buffers.find( streams_[NORMAL] )->second;
 	libcamera::Span<uint8_t> & frame_buffer = mapped_buffers_.find(raw_buffer)->second[0];
-	memmove(buffer, frame_buffer.data(), frame_buffer.size());
-	next_frame( std::move( req ) );
-	ret.indicator = GET_LATEST_FRAME_SUCCESS;
+	// memmove(buffer, frame_buffer.data(), frame_buffer.size());
+	ret.success = true;
+	ret.data = frame_buffer.data();
 	ret.size = frame_buffer.size();
+	ret.request = (uint64_t)req.release();
+
 	return ret;
 }
 
@@ -87,7 +80,7 @@ void rscamera::Camera::setup_streams( uint32_t width, uint32_t height ) {
 
 	video_stream_config->size.width = width;
 	video_stream_config->size.height = height;
-	video_stream_config->bufferCount = 2;
+	video_stream_config->bufferCount = 12;
 	video_stream_config->pixelFormat = libcamera::formats::BGR888;
 	video_stream_config->colorSpace = libcamera::ColorSpace::Sycc;
 	config_->validate();

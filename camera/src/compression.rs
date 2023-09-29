@@ -1,3 +1,4 @@
+
 #[derive(Debug)]
 pub enum CompressionError {
     CompressionIssue,
@@ -27,11 +28,12 @@ impl JPEGCompressor {
         &mut self,
         data: &[u8],
         metadata: ImageData,
-    ) -> Result<Vec<u8>, CompressionError> {
+        buffer: &mut Vec<u8>,
+    ) -> Result<usize, CompressionError> {
         let image = convert_to_image(data, metadata.width, metadata.height, metadata.pitch);
 
-        match self.compressor.compress_to_owned(image) {
-            Ok(compressed) => Ok(compressed.to_vec()),
+        match self.compressor.compress_to_slice(image, buffer) {
+            Ok(compressed) => Ok(compressed),
             Err(_) => Err(CompressionError::CompressionIssue),
         }
     }
