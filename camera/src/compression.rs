@@ -28,12 +28,11 @@ impl JPEGCompressor {
         &mut self,
         data: &[u8],
         metadata: ImageData,
-        buffer: &mut Vec<u8>,
-    ) -> Result<usize, CompressionError> {
+    ) -> Result<Vec<u8>, CompressionError> {
         let image = convert_to_image(data, metadata.width, metadata.height, metadata.pitch);
 
-        match self.compressor.compress_to_slice(image, buffer) {
-            Ok(compressed) => Ok(compressed),
+        match self.compressor.compress_to_owned(image) {
+            Ok(compressed) => Ok(compressed.to_vec()),
             Err(_) => Err(CompressionError::CompressionIssue),
         }
     }

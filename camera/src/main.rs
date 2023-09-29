@@ -20,7 +20,7 @@ const CAMERA_FPS: u64 = 30;
 
 lazy_static::lazy_static! {
     pub static ref ASYNC_RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
-    .worker_threads(2)
+    .worker_threads(3)
     .enable_io()
     .build()
     .unwrap();
@@ -35,14 +35,14 @@ async fn main() {
     let camera = unsafe { camera_init() };
     unsafe { camera_setup(camera, CAMERA_WIDTH, CAMERA_HEIGHT, CAMERA_FPS) };
     let camera_server = Arc::new(server::CameraServer::new().await);
-    let buffer_allocator = Arc::new(Mutex::new(BufferQueue::new(
-        compressed_buf_len(
-            CAMERA_WIDTH as usize,
-            CAMERA_HEIGHT as usize,
-            turbojpeg::Subsamp::Sub2x2,
-        )
-        .unwrap(),
-    )));
+    // let buffer_allocator = Arc::new(Mutex::new(BufferQueue::new(
+    //     compressed_buf_len(
+    //         CAMERA_WIDTH as usize,
+    //         CAMERA_HEIGHT as usize,
+    //         turbojpeg::Subsamp::Sub2x2,
+    //     )
+    //     .unwrap(),
+    // )));
 
     let image_metadata = compression::ImageData {
         width: CAMERA_WIDTH,
@@ -56,23 +56,25 @@ async fn main() {
         let client = rsct::client::Client::from_string("192.168.86.74:5254".to_string());
 
         let server_ref = Arc::clone(&camera_server);
-        let buffer_ref = Arc::clone(&buffer_allocator);
-        let mut buffer = buffer_ref.lock().unwrap().new_buffer();
         
         SYNC_RUNTIME.spawn(move || {
             let mut compresser = compression::JPEGCompressor::new();
-
-            let compressed_data_size = compresser
-                .compress(&res.data, image_metadata, &mut buffer)
+            // let mut buffer = vec![0_u8; (CAMERA_WIDTH * CAMERA_HEIGHT) as usize];
+            let buffer = compresser
+                .compress(&res.data, image_metadata)
                 .unwrap();
+            // println!(r#"{compressed_data_size}"#);
             
             unsafe { camera_next_frame(camera, res.request) };
-            drop(res);
+            
+            
             ASYNC_RUNTIME.spawn(async move {
+                println!("SETNK");
                 server_ref
-                    .send(&buffer[..compressed_data_size], &client, &ASYNC_RUNTIME)
+                    .send(&buffer, &client, &ASYNC_RUNTIME)
                     .await;
-                buffer_ref.lock().unwrap().return_buffer(buffer);
+                println!("SETN");
+                drop(res);
             });
         });
     }
