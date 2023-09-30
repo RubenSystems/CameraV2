@@ -18,7 +18,7 @@ const CAMERA_FPS: u64 = 30;
 
 lazy_static::lazy_static! {
     pub static ref ASYNC_RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
-    .worker_threads(3)
+    .worker_threads(1)
     .enable_io()
     .build()
     .unwrap();
@@ -30,6 +30,7 @@ lazy_static::lazy_static! {
 
 #[tokio::main]
 async fn main() {
+
     let camera = unsafe { camera_init() };
     unsafe { camera_setup(camera, CAMERA_WIDTH, CAMERA_HEIGHT, CAMERA_FPS) };
     let camera_server = Arc::new(server::CameraServer::new().await);
@@ -49,7 +50,6 @@ async fn main() {
         SYNC_RUNTIME.spawn(move || {
             let mut compresser = compression::JPEGCompressor::new();
             let buffer = compresser.compress(&res.data, image_metadata).unwrap();
-
             unsafe { camera_next_frame(camera, res.request) };
 
             ASYNC_RUNTIME.spawn(async move {
