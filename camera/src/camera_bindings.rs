@@ -1,6 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::slice;
 
 type VoidPointer = u64;
 
@@ -13,7 +14,7 @@ pub struct CameraGetFrameResult {
 }
 
 pub struct FrameData {
-    pub data: Vec<u8>,
+    pub data: &'static [u8],
     pub request: VoidPointer,
 }
 
@@ -37,18 +38,18 @@ impl CameraCapture {
 }
 
 impl Future for CameraCapture {
-    type Output = std::mem::ManuallyDrop<FrameData>; // Replace with your actual result type
+    type Output = FrameData; // Replace with your actual result type
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // Implement your asynchronous logic here
         let res = unsafe { camera_get_frame(self.camera) };
 
         if res.success {
-            let vector = unsafe { Vec::from_raw_parts(res.data, res.size, res.size) };
-            Poll::Ready(std::mem::ManuallyDrop::new(FrameData {
-                data: vector,
+            let image = unsafe { slice::from_raw_parts(res.data, res.size) };
+            Poll::Ready(FrameData {
+                data: image,
                 request: res.request,
-            }))
+            })
         } else {
             cx.waker().wake_by_ref();
             Poll::Pending

@@ -1,4 +1,3 @@
-
 #[derive(Debug)]
 pub enum CompressionError {
     CompressionIssue,
@@ -38,14 +37,18 @@ impl JPEGCompressor {
     }
 }
 
+impl Default for JPEGCompressor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn convert_to_image(data: &[u8], width: u64, height: u64, pitch: u64) -> turbojpeg::Image<&[u8]> {
-    let image = turbojpeg::Image::<&[u8]> {
+    turbojpeg::Image::<&[u8]> {
         pixels: data,
         width: width as usize,
         height: height as usize,
         pitch: pitch as usize,
         format: turbojpeg::PixelFormat::RGB,
-    };
-
-    image
+    }
 }

@@ -1,5 +1,5 @@
-use rsct::{client::Client, server::Server};
 use rsct::allocators::basic_allocator::BasicAllocator;
+use rsct::{client::Client, server::Server};
 pub struct CameraServer {
     pub server: Server<BasicAllocator>,
 }
@@ -15,7 +15,7 @@ impl CameraServer {
         self.server.recieve_once().await
     }
 
-    pub async fn send(&self, data: &[u8], to: &Client, runtime: &tokio::runtime::Runtime) {
+    pub async fn send(&self, data: &[u8], to: &Client) {
         self.server.transmit(data, to).await;
     }
 }
