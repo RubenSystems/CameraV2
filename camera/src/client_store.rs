@@ -1,25 +1,26 @@
 use rsct::client::Client;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 fn hash_client(client: &Client) -> String {
     format!("{}{}", client.ip_string(), client.port_string())
 }
 
-const DEFAULT_CLIENT_TTL: u8 = 8;
+const DEFAULT_CLIENT_TTL: i8 = 8;
 
-struct ClientStore {
-    client: Client,
-    ttl: u8,
+pub struct ClientStore {
+    pub client: Arc<Client>,
+    ttl: i8,
 }
 
 pub struct ClientManager {
-    clients: BTreeMap<String, ClientStore>,
+    pub clients: HashMap<String, ClientStore>,
 }
 
 impl ClientManager {
     pub fn new() -> Self {
         ClientManager {
-            clients: BTreeMap::<String, ClientStore>::new(),
+            clients: HashMap::<String, ClientStore>::new(),
         }
     }
 
@@ -27,7 +28,7 @@ impl ClientManager {
         self.clients.insert(
             hash_client(&client),
             ClientStore {
-                client,
+                client: Arc::new(client),
                 ttl: DEFAULT_CLIENT_TTL,
             },
         );
@@ -37,12 +38,5 @@ impl ClientManager {
         if let Some(cli) = self.clients.get_mut(&hash_client(&client)) {
             cli.ttl = DEFAULT_CLIENT_TTL;
         }
-    }
-
-    pub fn broadcast_iter(&mut self) -> impl Iterator<Item = (&String, &Client)> {
-        self.clients.iter_mut().map(|(key, value)| {
-            value.ttl -= 1;
-            (key, &value.client)
-        })
     }
 }

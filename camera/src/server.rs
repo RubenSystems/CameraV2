@@ -1,18 +1,30 @@
 use rsct::allocators::basic_allocator::BasicAllocator;
-use rsct::{client::Client, server::Server};
+use rsct::{
+    client::Client, reassembler::Reassembler, reassembler::ReassemblerResult, server::Server,
+};
+
 pub struct CameraServer {
-    pub server: Server<BasicAllocator>,
+    pub server: Server,
 }
 
 impl CameraServer {
     pub async fn new() -> CameraServer {
         CameraServer {
-            server: Server::<BasicAllocator>::new("0.0.0.0", "5253", BasicAllocator).await,
+            server: Server::new("0.0.0.0", "5253").await,
         }
     }
 
-    pub async fn listen(&mut self) -> (Option<Client>, Vec<u8>) {
-        self.server.recieve_once().await
+    pub async fn listen(
+        &self,
+        reassembler: &mut Reassembler<BasicAllocator>,
+    ) -> (Option<Client>, Vec<u8>) {
+        loop {
+            let packet = self.server.recieve_once().await;
+            match reassembler.add(packet) {
+                ReassemblerResult::Complete(cli, dat) => return (cli, dat),
+                _ => continue,
+            }
+        }
     }
 
     pub async fn send(&self, data: &[u8], to: &Client) {
