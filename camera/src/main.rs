@@ -10,7 +10,6 @@ use camera_bindings::{
 
 use rsct::{allocators::basic_allocator::BasicAllocator, reassembler::Reassembler};
 use std::sync::Arc;
-use std::time::Instant;
 use tokio::sync::Mutex;
 
 // const CAMERA_WIDTH: u64 = 2328;
@@ -21,14 +20,15 @@ const CAMERA_FPS: u64 = 30;
 
 lazy_static::lazy_static! {
     pub static ref ASYNC_RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
-    .worker_threads(4)
+    .worker_threads(1)
     .enable_io()
+    .enable_time()
     .build()
     .unwrap();
 }
 
 lazy_static::lazy_static! {
-    pub static ref SYNC_RUNTIME: rayon::ThreadPool = rayon::ThreadPoolBuilder::new().num_threads(4).build().unwrap();
+    pub static ref SYNC_RUNTIME: rayon::ThreadPool = rayon::ThreadPoolBuilder::new().num_threads(3).build().unwrap();
 }
 
 struct SystemState {
@@ -67,6 +67,7 @@ async fn main() {
         let mut reassembler = Reassembler::<BasicAllocator>::new(BasicAllocator);
         loop {
             let (client, msg_type) = state_ref.server.listen(&mut reassembler).await;
+            println!("GOT");
             let message = msg_type[0];
             match (client, message) {
                 (Some(c), 0) => state_ref.clients.lock().await.add_client(c),
@@ -82,10 +83,8 @@ async fn main() {
 
         SYNC_RUNTIME.spawn(move || {
             let mut compresser = compression::JPEGCompressor::new();
-            let now = Instant::now();
             let buffer = Arc::new(compresser.compress(&res.data, image_metadata).unwrap());
-            let elapsed = now.elapsed();
-            println!("{:.2?}", elapsed);
+
             unsafe { camera_next_frame(camera, res.request) };
 
             ASYNC_RUNTIME.spawn(async move {

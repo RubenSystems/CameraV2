@@ -19,7 +19,12 @@ impl CameraServer {
         reassembler: &mut Reassembler<BasicAllocator>,
     ) -> (Option<Client>, Vec<u8>) {
         loop {
-            let packet = self.server.recieve_once().await;
+            let packet = match self.server.recieve_once().await {
+                Ok(dat) => dat, 
+                _ => continue,
+            };
+
+
             match reassembler.add(packet) {
                 ReassemblerResult::Complete(cli, dat) => return (cli, dat),
                 _ => continue,
