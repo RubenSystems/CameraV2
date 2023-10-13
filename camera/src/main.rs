@@ -1,4 +1,3 @@
-pub mod buffer_pool;
 pub mod camera_bindings;
 pub mod client_store;
 pub mod compression;
@@ -20,7 +19,7 @@ const CAMERA_FPS: u64 = 30;
 
 lazy_static::lazy_static! {
     pub static ref ASYNC_RUNTIME: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
-    .worker_threads(1)
+    .worker_threads(2)
     .enable_io()
     .enable_time()
     .build()
@@ -28,7 +27,7 @@ lazy_static::lazy_static! {
 }
 
 lazy_static::lazy_static! {
-    pub static ref SYNC_RUNTIME: rayon::ThreadPool = rayon::ThreadPoolBuilder::new().num_threads(3).build().unwrap();
+    pub static ref SYNC_RUNTIME: rayon::ThreadPool = rayon::ThreadPoolBuilder::new().num_threads(4).build().unwrap();
 }
 
 struct SystemState {
@@ -47,13 +46,13 @@ async fn main() {
         clients: Mutex::new(client_store::ClientManager::new()),
     });
 
-    system_state
-        .clients
-        .lock()
-        .await
-        .add_client(rsct::client::Client::from_string(
-            "192.168.86.42:5254".to_string(),
-        ));
+    // system_state
+    //     .clients
+    //     .lock()
+    //     .await
+    //     .add_client(rsct::client::Client::from_string(
+    //         "192.168.86.42:5254".to_string(),
+    //     ));
 
     let image_metadata = compression::ImageData {
         width: CAMERA_WIDTH,
@@ -86,6 +85,7 @@ async fn main() {
             let buffer = Arc::new(compresser.compress(&res.data, image_metadata).unwrap());
 
             unsafe { camera_next_frame(camera, res.request) };
+            
 
             ASYNC_RUNTIME.spawn(async move {
                 for (_, client_store) in state_ref.clients.lock().await.clients.iter() {
@@ -94,6 +94,7 @@ async fn main() {
                     let buffer_ref = Arc::clone(&buffer);
                     ASYNC_RUNTIME.spawn(async move {
                         state_ref_ref.server.send(&buffer_ref, &client_ref).await;
+
                     });
                 }
             });
