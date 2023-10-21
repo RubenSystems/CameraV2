@@ -2,6 +2,7 @@
 
 
 #include <queue>
+#include <iostream>
 // #include <mutex>
 
 namespace rscamera {
@@ -28,10 +29,9 @@ template <typename T> class Pipeline {
 
 	bool pop( T & value ) {
 		// std::unique_lock<std::mutex> lock( mutex_ );
-
-		if ( queue_.empty() )
+		if ( queue_.empty() ) {
 			return false;
-
+		}
 		value = std::move( queue_.front() );
 		queue_.pop();
 		return true;

@@ -29,34 +29,41 @@ extern "C" {
 		uint64_t request;
 		size_t size;
 	};
+
+	struct CameraDimensionConfig {
+		uint32_t h_height, h_width, h_buffercount; 
+		uint32_t l_height, l_width, l_buffercount; 
+		uint32_t fps;
+	};
 }
 
 class Camera {
     public:
 	typedef rscamera::Pipeline<std::unique_ptr<CompletedRequest> > pipeline_t;
 
-	Camera()
-		: pipe_( std::make_unique<pipeline_t>() ) {
-	}
+	Camera();
 
 	~Camera();
 
-	void setup( uint32_t width, uint32_t height, uint32_t fps );
+	void setup( CameraDimensionConfig );
 
 	void start();
 
 	void next_frame( std::unique_ptr<CompletedRequest> req );
 
-	uint32_t get_stride();
+	GetLatestFrameRes get_latest_h_frame();
 
-	GetLatestFrameRes get_latest_frame();
+	GetLatestFrameRes get_latest_l_frame();
 
     private:
+	
+	GetLatestFrameRes get_frame_for_stream(std::unique_ptr<pipeline_t> & cpipe, StreamType type );
+
 	void alloc();
 
 	void setup_camera();
 
-	void setup_streams( uint32_t width, uint32_t height );
+	void setup_streams( CameraDimensionConfig config );
 
 	void setup_controls();
 
@@ -74,11 +81,15 @@ class Camera {
 	libcamera::ControlList controls_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
-	std::vector<std::unique_ptr<libcamera::Request> > requests_;
-	std::map<StreamType, libcamera::Stream *> streams_;
+	
+	std::unordered_map<StreamType, libcamera::Stream *> streams_;
 	std::unordered_map<libcamera::FrameBuffer *, std::vector<libcamera::Span<uint8_t> > >
 		mapped_buffers_;
-	std::unique_ptr<pipeline_t> pipe_;
-	uint32_t stride_;
+
+
+	std::vector<std::unique_ptr<libcamera::Request> > lrequests_;
+	std::vector<std::unique_ptr<libcamera::Request> > hrequests_;
+	std::unique_ptr<pipeline_t> hpipe_;
+	std::unique_ptr<pipeline_t> lpipe_;
 };
 }
