@@ -21,7 +21,7 @@ impl Compresser {
         let mut jpeg_buf = vec![0_u8; buf_size as usize];
         let buf_ref = &mut jpeg_buf.as_mut_ptr() as *mut *mut u8;
 
-        let compression = unsafe {
+        let _ = unsafe {
             turbojpeg_sys::tjCompressFromYUV(
                 self.handle,
                 buffer.as_ptr(),

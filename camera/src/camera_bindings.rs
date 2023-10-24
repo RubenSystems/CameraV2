@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::slice;
 use std::task::{Context, Poll};
 
-type VoidPointer = u64;
+pub type VoidPointer = u64;
 
 #[repr(C)]
 pub struct CameraGetFrameResult {

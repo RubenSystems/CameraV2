@@ -8,9 +8,9 @@ pub struct CameraServer {
 }
 
 impl CameraServer {
-    pub async fn new() -> CameraServer {
+    pub async fn new(port_string: &str) -> CameraServer {
         CameraServer {
-            server: Server::new("0.0.0.0", "5253").await,
+            server: Server::new("0.0.0.0", port_string).await,
         }
     }
 
