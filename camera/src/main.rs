@@ -10,15 +10,16 @@ use crate::thread_pool::CompressionThreadPool;
 use rsct::client::Client;
 use std::sync::Arc;
 
-// const CAMERA_WIDTH: u64 = 2328;
-// const CAMERA_HEIGHT: u64 = 1748;
+// const HCAMERA_WIDTH: u64 = 2328;
+// const HCAMERA_HEIGHT: u64 = 1748;
 // const CAMERA_FPS: u64 = 25;
-const LFRAME_DIV_FACT: u64 = 10;
 const HCAMERA_WIDTH: u64 = 1920;
 const HCAMERA_HEIGHT: u64 = 1080;
+const CAMERA_FPS: u64 = 30;
+
+const LFRAME_DIV_FACT: u64 = 10;
 const LCAMERA_WIDTH: u64 = HCAMERA_WIDTH / LFRAME_DIV_FACT;
 const LCAMERA_HEIGHT: u64 = HCAMERA_HEIGHT / LFRAME_DIV_FACT;
-const CAMERA_FPS: u64 = 30;
 
 const IMAGE_METADATA: compression::ImageData = compression::ImageData {
     width: HCAMERA_WIDTH,
@@ -53,6 +54,7 @@ async fn main() {
     };
 
     let state = Arc::new(server::CameraServer::new("5254").await);
+
     let l_state_ref = Arc::clone(&state);
     let sync_runtime: CompressionThreadPool =
         CompressionThreadPool::new(IMAGE_METADATA, l_state_ref, camera, |size, data, srv| {

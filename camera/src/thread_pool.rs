@@ -20,27 +20,20 @@ impl CompressionThreadPool {
         camera: VoidPointer,
         on_complete: fn(u64, Vec<u8>, Arc<CameraServer>),
     ) -> Self {
-		let core_ids = core_affinity::get_core_ids().unwrap();
+        let core_ids = core_affinity::get_core_ids().unwrap();
         let (sender, receiver) = mpsc::channel();
         let recv_mtx = Arc::new(Mutex::new(receiver));
 
-        let workers = core_ids.into_iter().map(|id| {
-            let srv_ref = Arc::clone(&server);
-            let mtx = Arc::clone(&recv_mtx);
-            CompressionWorker::new(
-				id,
-                mtx,
-                data,
-                srv_ref,
-                camera,
-                on_complete,
-            )
-        }).collect();
+        let workers = core_ids
+            .into_iter()
+            .map(|id| {
+                let srv_ref = Arc::clone(&server);
+                let mtx = Arc::clone(&recv_mtx);
+                CompressionWorker::new(id, mtx, data, srv_ref, camera, on_complete)
+            })
+            .collect();
 
-        Self {
-            workers,
-            sender,
-        }
+        Self { workers, sender }
     }
 
     pub fn dispatch(&self, image: FrameData) {
@@ -60,7 +53,7 @@ struct CompressionWorker {
 
 impl CompressionWorker {
     pub fn new(
-		thread_id: CoreId,
+        thread_id: CoreId,
         receiver: Arc<Mutex<mpsc::Receiver<FrameData>>>,
         data: ImageData,
         server: Arc<CameraServer>,
@@ -68,7 +61,7 @@ impl CompressionWorker {
         on_complete: fn(u64, Vec<u8>, Arc<CameraServer>) -> (),
     ) -> Self {
         let worker = std::thread::spawn(move || {
-			let res = core_affinity::set_for_current(thread_id);
+            _ = core_affinity::set_for_current(thread_id);
             let compresser = Compresser::new();
             loop {
                 let isrv_ref = Arc::clone(&server);
